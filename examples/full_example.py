@@ -1,43 +1,3 @@
-# Spilli-DBAL
-
-Web-framework independent CRUD tools for working with database via SQLAlchemy.
-
-<!--TOC-->
-
-- [Spilli-DBAL](#spilli-dbal)
-  - [Features](#features)
-  - [Installation](#installation)
-  - [Examples](#examples)
-    - [Full example](#full-example)
-
-<!--TOC-->
-
-## Features
-
-* DBAL - database access layer.
-* CRUD methods for create, read, update and delete object from database.
-* Bulk methods for create, read, update and delete object from database.
-* Method of paginating data.
-* StatementMaker class for create query 'per-one-model'.
-* Marshmallow (https://github.com/marshmallow-code/marshmallow) schemas for serialization input data for pagination.
-* Marshmallow schemas for deserialization SQLAlchemy result object to `dict`.
-* Datetime with UTC timezone validation in `BaseSchema`.
-
-## Installation
-
-Recommended using the latest version of Python. Spilli-DBAL supports Python 3.12 and newer.
-
-Install and update using `pip`:
-
-```shell
-$ pip install -U spilli_dbal
-```
-
-## Examples
-
-### Full example
-
-```python
 from spilli_dbal.base_model import ModelMixin
 from spilli_dbal.dbal import SqlaDBAL
 from spilli_dbal.dbal.exceptions import DBALObjectNotFoundException
@@ -79,4 +39,3 @@ if __name__ == '__main__':
         ItemsDBAL(session).read(id=new_item.id)
     except DBALObjectNotFoundException:
         print('=>', 'Deleted item.')
-```

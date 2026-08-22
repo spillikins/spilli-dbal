@@ -1,0 +1,100 @@
+repos:
+- repo: https://github.com/asottile/pyupgrade
+  rev: v3.21.2
+  hooks:
+  - id: pyupgrade
+    args: [--py312-plus]
+- repo: https://github.com/MarcoGorelli/auto-walrus
+  rev: 0.4.1
+  hooks:
+  - id: auto-walrus
+- repo: https://github.com/dannysepler/rm_unneeded_f_str
+  rev: v0.2.0
+  hooks:
+  - id: rm-unneeded-f-str
+- repo: https://github.com/mxr/unkey
+  rev: v0.0.2
+  hooks:
+  - id: unkey
+- repo: https://github.com/pre-commit/pre-commit-hooks
+  rev: v6.0.0
+  hooks:
+  - id: check-ast
+  - id: fix-byte-order-marker
+  - id: end-of-file-fixer
+  - id: trailing-whitespace
+  - id: check-yaml
+  - id: check-builtin-literals
+  - id: check-toml
+  - id: check-builtin-literals
+  - id: check-yaml
+  - id: double-quote-string-fixer
+  - id: check-merge-conflict
+- repo: https://github.com/PyCQA/docformatter
+  rev: v1.7.7
+  hooks:
+  - id: docformatter
+    additional_dependencies: [tomli]
+    args: [--in-place, --config, ./pyproject.toml]
+- repo: https://github.com/jshwi/docsig
+  rev: v0.95.0
+  hooks:
+  - id: docsig
+    args:
+    - --check-class
+    - --check-dunders
+    - --check-overridden
+    - --check-protected
+    - --ignore-no-params
+- repo: https://github.com/hadialqattan/pycln
+  rev: v2.6.0
+  hooks:
+  - id: pycln
+    args: [--config=pyproject.toml]
+- repo: https://github.com/psf/black
+  rev: 26.5.1
+  hooks:
+  - id: black
+- repo: https://github.com/asottile/reorder_python_imports
+  rev: v3.17.0
+  hooks:
+  - id: reorder-python-imports
+- repo: https://github.com/pre-commit/pygrep-hooks
+  rev: v1.10.0
+  hooks:
+  - id: python-use-type-annotations
+  - id: python-no-eval
+  - id: text-unicode-replacement-char
+- repo: https://github.com/pycqa/flake8
+  rev: 7.3.0
+  hooks:
+  - id: flake8
+    additional_dependencies:
+    - flake8-bugbear
+    - flake8-implicit-str-concat
+    - flake8-pytest
+    - flake8-pytest-style
+    - flake8-absolute-import
+    args: [--max-line-length=100]
+- repo: https://github.com/macisamuele/language-formatters-pre-commit-hooks
+  rev: v2.16.0
+  hooks:
+  - id: pretty-format-yaml
+    args: [--autofix, --indent, '2']
+  - id: pretty-format-toml
+    args: [--autofix, --indent, '2']
+- repo: https://codeberg.org/frnmst/md-toc
+  rev: 9.0.0
+  hooks:
+  - id: md-toc
+    args: [-p, github]
+- repo: https://github.com/mrtazz/checkmake.git
+  rev: v0.3.0
+  hooks:
+  - id: checkmake
+- repo: https://github.com/PyCQA/bandit
+  rev: 1.9.4
+  hooks:
+  - id: bandit
+    args: [-c, pyproject.toml]
+    additional_dependencies: ['bandit[toml]']
