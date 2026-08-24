@@ -1,0 +1,91 @@
+[build-system]
+build-backend = "setuptools.build_meta"
+requires = ["setuptools>=69", "wheel"]
+
+[project]
+authors = [
+  {name = "Konstantin Fadeev", email = "fadeev@legalact.pro"}
+]
+classifiers = [
+  "Development Status :: 5 - Production/Stable",
+  "Intended Audience :: Developers",
+  "License :: OSI Approved :: MIT License",
+  "Operating System :: OS Independent",
+  "Programming Language :: Python :: 3 :: Only",
+  "Programming Language :: Python :: Implementation :: CPython",
+  "Topic :: Database",
+  "Topic :: Software Development :: Libraries"
+]
+dependencies = [
+  "SQLAlchemy>=2.0.0",
+  "marshmallow>=4.0.0"
+]
+description = "Web-framework independent CRUD tools for working with database via SQLAlchemy."
+license = {file = "LICENSE"}
+name = "Spilli-DBAL"
+readme = "README.md"
+requires-python = ">=3.12"
+version = "1.0.0"
+
+[project.optional-dependencies]
+dev = [
+  "build==1.5.0",
+  "psycopg[binary]==3.3.4",
+  "pre-commit==4.6.2",
+  "pytest==9.1.1",
+  "pytest-cov==7.1.0",
+  "python-dotenv==1.2.3",
+  "tox==4.60.0",
+  "twine==7.0.0"
+]
+
+[project.urls]
+changelog = "https://github.com/flask-pro/db-first/blob/master/CHANGES.md"
+repository = "https://github.com/flask-pro/db-first"
+
+[tool.bandit]
+exclude_dirs = ["tests", "venv"]
+
+[tool.black]
+include = '\.pyi?$'
+line-length = 100
+skip-string-normalization = true
+target-version = ['py312']
+
+[tool.docformatter]
+black = true
+non-cap = ["docformatter"]
+non-strict = false
+recursive = true
+style = 'sphinx'
+wrap-descriptions = 100
+wrap-summaries = 100
+
+[tool.docsig]
+check-class = true
+check-dunders = true
+check-nested = true
+check-overridden = true
+check-property-returns = true
+check-protected = true
+check-protected-class-methods = true
+disable = ["SIG101", "SIG501"]
+
+[tool.setuptools.packages.find]
+include = ["spilli_dbal*"]
+where = ["src"]
+
+[tool.tox]
+legacy_tox_ini = """
+    [tox]
+    env_list =
+        py314
+        py313
+        py312
+    [testenv]
+    allowlist_externals = *
+    commands =
+        pip install -q -e ".[dev]"
+        pip install -q -e .
+        pytest
+"""

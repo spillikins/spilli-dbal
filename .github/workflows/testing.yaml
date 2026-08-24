@@ -1,0 +1,45 @@
+name: Spilli-DBAL testing
+run-name: ${{ github.actor }} is testing Spilli-DBAL
+on: [push]
+jobs:
+  linters:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - uses: actions/setup-python@v5
+      with:
+        python-version: |
+          3.12
+          3.13
+          3.14
+    - run: make format
+  test:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - uses: actions/setup-python@v5
+      with:
+        python-version: |
+          3.12
+          3.13
+          3.14
+    - run: make test
+  tox:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - uses: actions/setup-python@v5
+      with:
+        python-version: |
+          3.12
+          3.13
+          3.14
+    - run: make tox
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - uses: actions/setup-python@v5
+      with:
+        python-version: '3.14'
+    - run: make build
