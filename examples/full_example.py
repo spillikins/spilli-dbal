@@ -1,6 +1,6 @@
-from spilli_dbal.base_model import ModelMixin
 from spilli_dbal.dbal import SqlaDBAL
 from spilli_dbal.dbal.exceptions import DBALObjectNotFoundException
+from spilli_dbal.models.base import ModelMixin
 from sqlalchemy import create_engine
 from sqlalchemy.orm import declarative_base
 from sqlalchemy.orm import Mapped

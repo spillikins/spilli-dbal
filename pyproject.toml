@@ -39,8 +39,8 @@ dev = [
 ]
 
 [project.urls]
-changelog = "https://github.com/flask-pro/db-first/blob/master/CHANGES.md"
-repository = "https://github.com/flask-pro/db-first"
+changelog = "https://github.com/spillikins/spilli-dbal/blob/main/CHANGES.md"
+repository = "https://github.com/spillikins/spilli-dbal"
 
 [tool.bandit]
 exclude_dirs = ["tests", "venv"]
