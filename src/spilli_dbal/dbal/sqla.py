@@ -1,6 +1,7 @@
 from typing import Any
 from typing import get_args
 from typing import Literal
+from typing import TypeVar
 
 from spilli_dbal.dbal.exceptions import DBALColumnNonExistException
 from spilli_dbal.dbal.exceptions import DBALCreateException
@@ -52,7 +53,14 @@ class SqlaDBAL[M](PageMixin):
     _model: type[M]
 
     def __init_subclass__(cls) -> None:
-        cls._model = get_args(cls.__orig_bases__[0])[0]
+        for base in cls.__orig_bases__:
+            args = get_args(base)
+            if args and not isinstance(args[0], TypeVar):
+                cls._model = args[0]
+                break
+        else:
+            if not hasattr(cls, '_model'):
+                raise TypeError(f'<{cls.__name__}> must be created as SqlaDBAL[Model] subclass.')
 
     def __init__(self, session: Session) -> None:
         self._session = session
