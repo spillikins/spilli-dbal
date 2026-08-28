@@ -57,8 +57,8 @@ class StatementMaker:
     def __init__(
         self,
         model,
-        where: dict['str':Any] | None = None,
-        order_by: dict['str':Any] | None = None,
+        where: dict[str, Any] | None = None,
+        order_by: list[dict[str, Any]] | None = None,
         limit: int = 1000,
         offset: int = 0,
     ):
