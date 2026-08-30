@@ -78,6 +78,17 @@ def test_dbal__read_error(fx_db, fx_parent_dbal):
         fx_parent_dbal(session_db).read(uuid4())
 
 
+def test_dbal__update_error__non_exist_object(fx_db, fx_parent_dbal):
+    session_db, parents_model, _, _ = fx_db
+
+    updated_params = {'first': next(UNIQUE_STRING)}
+    non_exist_id = uuid4()
+    with pytest.raises(DBALObjectNotFoundException) as e:
+        fx_parent_dbal(session_db).update(non_exist_id, **updated_params)
+
+    assert e.value.args[0].args[0] == 'No row was found when one was required'
+
+
 @pytest.mark.parametrize('data', column_non_exist_data)
 def test_dbal__update_error__non_exist_column(fx_db, fx_parent_dbal, data):
     session_db, parents_model, _, _ = fx_db

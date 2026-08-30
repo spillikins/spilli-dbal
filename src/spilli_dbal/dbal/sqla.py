@@ -153,6 +153,10 @@ class SqlaDBAL[M](PageMixin):
 
         try:
             obj = self._session.scalars(stmt).one()
+
+        except NoResultFound as e:
+            raise DBALObjectNotFoundException(e)
+
         except CompileError as e:
             compile_error_handler(e)
             raise DBALUpdateException(e)
