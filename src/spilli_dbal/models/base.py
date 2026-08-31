@@ -22,10 +22,7 @@ class ModelMixin:
         primary_key=True, nullable=False, default=make_uuid4, comment='UUID'
     )
     created_at: Mapped[datetime] = mapped_column(
-        UTCDateTime,
-        nullable=False,
-        default=make_datetime_with_utc,
-        comment='Date and time created',
+        UTCDateTime, nullable=False, default=make_datetime_with_utc, comment='Date and time created'
     )
     updated_at: Mapped[datetime | None] = mapped_column(
         UTCDateTime, onupdate=make_datetime_with_utc, comment='Date and time updated'
