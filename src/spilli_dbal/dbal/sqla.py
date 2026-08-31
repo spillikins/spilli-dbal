@@ -155,12 +155,12 @@ class SqlaDBAL[M](PageMixin):
         try:
             obj = self._session.scalars(stmt).one()
 
-        except NoResultFound as e:
-            raise DBALObjectNotFoundException(e)
-
         except CompileError as e:
             compile_error_handler(e)
             raise DBALUpdateException(e)
+
+        except NoResultFound as e:
+            raise DBALObjectNotFoundException(e)
 
         except IntegrityError as e:
             self._session.rollback()
@@ -168,9 +168,11 @@ class SqlaDBAL[M](PageMixin):
             raise DBALUpdateException(e)
 
         except ProgrammingError as e:
+            self._session.rollback()
             raise DBALUnexpectedValueTypeException(e)
 
         except Exception as e:
+            self._session.rollback()
             raise DBALUpdateException(e)
 
         return obj
