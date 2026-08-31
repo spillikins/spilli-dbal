@@ -91,6 +91,7 @@ class SqlaDBAL[M](PageMixin):
             raise DBALUnexpectedValueTypeException(e)
 
         except Exception as e:
+            self._session.rollback()
             raise DBALCreateException(e)
 
         return new_obj
