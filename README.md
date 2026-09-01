@@ -20,8 +20,8 @@ Web-framework independent CRUD tools for working with database via SQLAlchemy.
 * Bulk methods for create, read, update and delete object from database.
 * Method of paginating data.
 * StatementMaker class for create query 'per-one-model'.
-* Marshmallow (https://github.com/marshmallow-code/marshmallow) schemas for serialization input data for pagination.
-* Marshmallow schemas for deserialization SQLAlchemy result object to `dict`.
+* [Marshmallow](https://github.com/marshmallow-code/marshmallow) schemas for serialization input data for StatementMaker.
+* [Marshmallow](https://github.com/marshmallow-code/marshmallow) schemas for deserialization StatementMaker result object to `dict`.
 * Datetime with UTC timezone validation in `BaseSchema`.
 
 ## Installation

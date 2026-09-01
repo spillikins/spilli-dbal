@@ -1,2 +1,2 @@
-class SpillDBALError(Exception):
+class SpilliDBALError(Exception):
     """Common exception for errors."""

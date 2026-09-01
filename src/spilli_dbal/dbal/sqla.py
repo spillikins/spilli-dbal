@@ -6,6 +6,7 @@ from typing import TypeVar
 from spilli_dbal.dbal.exceptions import DBALColumnNonExistException
 from spilli_dbal.dbal.exceptions import DBALCreateException
 from spilli_dbal.dbal.exceptions import DBALForeignKeyConstraintFailedException
+from spilli_dbal.dbal.exceptions import DBALMultipleResultsFoundException
 from spilli_dbal.dbal.exceptions import DBALNotNullConstraintFailedException
 from spilli_dbal.dbal.exceptions import DBALObjectNotFoundException
 from spilli_dbal.dbal.exceptions import DBALUnexpectedValueTypeException
@@ -19,6 +20,7 @@ from sqlalchemy import Sequence
 from sqlalchemy import update
 from sqlalchemy.exc import CompileError
 from sqlalchemy.exc import IntegrityError
+from sqlalchemy.exc import MultipleResultsFound
 from sqlalchemy.exc import NoResultFound
 from sqlalchemy.exc import ProgrammingError
 from sqlalchemy.orm import Session
@@ -127,6 +129,8 @@ class SqlaDBAL[M](PageMixin):
             return self._session.scalars(stmt).one()
         except NoResultFound as e:
             raise DBALObjectNotFoundException(e)
+        except MultipleResultsFound as e:
+            raise DBALMultipleResultsFoundException(e)
 
     def read_filtered_list(
         self, sort_order: Literal['asc', 'desc'] = 'asc', sort_field: str | None = None, **kwargs
