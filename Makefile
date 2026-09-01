@@ -31,7 +31,7 @@ tox: venv
 
 clean:
 	rm -rf dist/
-	rm -rf src/Spilli-DBAL.egg-info
+	rm -rf src/Spilli_DBAL.egg-info
 	rm -rf venv
 
 build: clean venv
