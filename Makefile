@@ -31,7 +31,7 @@ tox: venv
 
 clean:
 	rm -rf dist/
-	rm -rf src/Spilli-DBAL.egg-info
+	rm -rf src/Spilli_DBAL.egg-info
 	rm -rf venv
 
 build: clean venv
@@ -47,4 +47,4 @@ upload_to_testpypi: build
 upload_to_pypi: build
 	$(PYTHON_VENV) -m twine upload dist/*
 
-all: venv tox build
+all: install tox

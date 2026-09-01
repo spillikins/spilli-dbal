@@ -1,8 +1,8 @@
 from datetime import timezone
 
 from marshmallow import fields
+from marshmallow import validate
 from spilli_dbal.schemas import BaseSchema
-from spilli_dbal.schemas import PaginateResultSchema
 
 
 class IdSchema(BaseSchema):
@@ -28,6 +28,21 @@ class ParentSchema(IdSchema):
     created_at = fields.AwareDateTime(default_timezone=timezone.utc)
     father = fields.Nested(FatherSchema)
     children = fields.Nested(ChildSchema, many=True)
+
+
+class PaginationSchema(BaseSchema):
+    page = fields.Integer(required=True, validate=[validate.Range(min=0)])
+    per_page = fields.Integer(required=True, validate=[validate.Range(min=0)])
+    pages = fields.Integer(required=True, validate=[validate.Range(min=0)])
+    total = fields.Integer(required=True, validate=[validate.Range(min=0)])
+
+
+class MetadataSchema(BaseSchema):
+    pagination = fields.Nested(PaginationSchema)
+
+
+class PaginateResultSchema(BaseSchema):
+    _metadata = fields.Nested(MetadataSchema)
 
 
 class ParentPaginationSchema(PaginateResultSchema):

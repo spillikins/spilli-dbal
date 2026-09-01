@@ -11,10 +11,6 @@ from sqlalchemy import Select
 from sqlalchemy import select
 
 
-class JoinSchema(BaseSchema):
-    table = fields.String(required=True, validate=[validate.Length(min=1)])
-
-
 class FilterSchema(BaseSchema):
     col = fields.String(required=True, validate=[validate.Length(min=1)])
     opr = fields.String(
@@ -57,8 +53,8 @@ class StatementMaker:
     def __init__(
         self,
         model,
-        where: dict['str':Any] | None = None,
-        order_by: dict['str':Any] | None = None,
+        where: dict[str, Any] | None = None,
+        order_by: list[dict[str, Any]] | None = None,
         limit: int = 1000,
         offset: int = 0,
     ):
@@ -82,7 +78,9 @@ class StatementMaker:
 
         SQLJSONSchema().load(data)
 
-    def _make_expr(self, col: str, opr: Literal['eq', 'in'], value: Any) -> bool | Any:
+    def _make_expr(
+        self, col: str, opr: Literal['lt', 'le', 'eq', 'ne', 'ge', 'gt', 'in', 'ilike'], value: Any
+    ) -> bool | Any:
         if opr == 'lt':
             return getattr(self._model, col) < value
         if opr == 'le':

@@ -1,10 +1,12 @@
 from typing import Any
 from typing import get_args
 from typing import Literal
+from typing import TypeVar
 
 from spilli_dbal.dbal.exceptions import DBALColumnNonExistException
 from spilli_dbal.dbal.exceptions import DBALCreateException
 from spilli_dbal.dbal.exceptions import DBALForeignKeyConstraintFailedException
+from spilli_dbal.dbal.exceptions import DBALMultipleResultsFoundException
 from spilli_dbal.dbal.exceptions import DBALNotNullConstraintFailedException
 from spilli_dbal.dbal.exceptions import DBALObjectNotFoundException
 from spilli_dbal.dbal.exceptions import DBALUnexpectedValueTypeException
@@ -18,6 +20,7 @@ from sqlalchemy import Sequence
 from sqlalchemy import update
 from sqlalchemy.exc import CompileError
 from sqlalchemy.exc import IntegrityError
+from sqlalchemy.exc import MultipleResultsFound
 from sqlalchemy.exc import NoResultFound
 from sqlalchemy.exc import ProgrammingError
 from sqlalchemy.orm import Session
@@ -52,7 +55,14 @@ class SqlaDBAL[M](PageMixin):
     _model: type[M]
 
     def __init_subclass__(cls) -> None:
-        cls._model = get_args(cls.__orig_bases__[0])[0]
+        for base in cls.__orig_bases__:
+            args = get_args(base)
+            if args and not isinstance(args[0], TypeVar):
+                cls._model = args[0]
+                break
+        else:
+            if not hasattr(cls, '_model'):
+                raise TypeError(f'<{cls.__name__}> must be created as SqlaDBAL[Model] subclass.')
 
     def __init__(self, session: Session) -> None:
         self._session = session
@@ -83,6 +93,7 @@ class SqlaDBAL[M](PageMixin):
             raise DBALUnexpectedValueTypeException(e)
 
         except Exception as e:
+            self._session.rollback()
             raise DBALCreateException(e)
 
         return new_obj
@@ -118,6 +129,8 @@ class SqlaDBAL[M](PageMixin):
             return self._session.scalars(stmt).one()
         except NoResultFound as e:
             raise DBALObjectNotFoundException(e)
+        except MultipleResultsFound as e:
+            raise DBALMultipleResultsFoundException(e)
 
     def read_filtered_list(
         self, sort_order: Literal['asc', 'desc'] = 'asc', sort_field: str | None = None, **kwargs
@@ -145,9 +158,13 @@ class SqlaDBAL[M](PageMixin):
 
         try:
             obj = self._session.scalars(stmt).one()
+
         except CompileError as e:
             compile_error_handler(e)
             raise DBALUpdateException(e)
+
+        except NoResultFound as e:
+            raise DBALObjectNotFoundException(e)
 
         except IntegrityError as e:
             self._session.rollback()
@@ -155,9 +172,11 @@ class SqlaDBAL[M](PageMixin):
             raise DBALUpdateException(e)
 
         except ProgrammingError as e:
+            self._session.rollback()
             raise DBALUnexpectedValueTypeException(e)
 
         except Exception as e:
+            self._session.rollback()
             raise DBALUpdateException(e)
 
         return obj

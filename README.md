@@ -9,6 +9,7 @@ Web-framework independent CRUD tools for working with database via SQLAlchemy.
   - [Installation](#installation)
   - [Examples](#examples)
     - [Full example](#full-example)
+  - [Project automation](#project-automation)
 
 <!--TOC-->
 
@@ -19,8 +20,8 @@ Web-framework independent CRUD tools for working with database via SQLAlchemy.
 * Bulk methods for create, read, update and delete object from database.
 * Method of paginating data.
 * StatementMaker class for create query 'per-one-model'.
-* Marshmallow (https://github.com/marshmallow-code/marshmallow) schemas for serialization input data for pagination.
-* Marshmallow schemas for deserialization SQLAlchemy result object to `dict`.
+* [Marshmallow](https://github.com/marshmallow-code/marshmallow) schemas for serialization input data for StatementMaker.
+* [Marshmallow](https://github.com/marshmallow-code/marshmallow) schemas for deserialization StatementMaker result object to `dict`.
 * Datetime with UTC timezone validation in `BaseSchema`.
 
 ## Installation
@@ -38,7 +39,7 @@ $ pip install -U spilli_dbal
 ### Full example
 
 ```python
-from spilli_dbal.base_model import ModelMixin
+from spilli_dbal.models.base import ModelMixin
 from spilli_dbal.dbal import SqlaDBAL
 from spilli_dbal.dbal.exceptions import DBALObjectNotFoundException
 from sqlalchemy import create_engine
@@ -79,4 +80,18 @@ if __name__ == '__main__':
         ItemsDBAL(session).read(id=new_item.id)
     except DBALObjectNotFoundException:
         print('=>', 'Deleted item.')
+```
+
+## Project automation
+
+All commands are defined in the `Makefile`.
+
+Builds the package, installs it from the sdist, and installs pre-commit hooks into git
+```shell
+make install
+```
+
+Run for build, install and test project.
+```shell
+make all
 ```

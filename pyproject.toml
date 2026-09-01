@@ -9,7 +9,6 @@ authors = [
 classifiers = [
   "Development Status :: 5 - Production/Stable",
   "Intended Audience :: Developers",
-  "License :: OSI Approved :: MIT License",
   "Operating System :: OS Independent",
   "Programming Language :: Python :: 3 :: Only",
   "Programming Language :: Python :: Implementation :: CPython",
@@ -25,7 +24,7 @@ license = {file = "LICENSE"}
 name = "Spilli-DBAL"
 readme = "README.md"
 requires-python = ">=3.12"
-version = "1.0.0"
+version = "1.1.0"
 
 [project.optional-dependencies]
 dev = [
@@ -40,8 +39,8 @@ dev = [
 ]
 
 [project.urls]
-changelog = "https://github.com/flask-pro/db-first/blob/master/CHANGES.md"
-repository = "https://github.com/flask-pro/db-first"
+changelog = "https://github.com/spillikins/spilli-dbal/blob/main/CHANGES.md"
+repository = "https://github.com/spillikins/spilli-dbal"
 
 [tool.bandit]
 exclude_dirs = ["tests", "venv"]

@@ -1,7 +1,7 @@
-from spilli_dbal.exc import SpillDBALError
+from spilli_dbal.exc import SpilliDBALError
 
 
-class DBALException(SpillDBALError):
+class DBALException(SpilliDBALError):
     """Main exception for DBAL."""
 
 
@@ -11,6 +11,10 @@ class DBALCreateException(DBALException):
 
 class DBALObjectNotFoundException(DBALException):
     """Exception for read methods."""
+
+
+class DBALMultipleResultsFoundException(DBALException):
+    """Exception for read methods if more than one row is found."""
 
 
 class DBALColumnNonExistException(DBALException):
