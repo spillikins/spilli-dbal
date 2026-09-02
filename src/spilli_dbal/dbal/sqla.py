@@ -191,8 +191,6 @@ class SqlaDBAL[M](PageMixin):
 
     def delete(self, id: Any) -> None:
         self._session.execute(delete(self._model).where(self._model.id == id))
-        self._session.commit()
 
     def bulk_delete(self, ids: list[Any]) -> None:
         self._session.execute(delete(self._model).where(self._model.id.in_(ids)))
-        self._session.commit()

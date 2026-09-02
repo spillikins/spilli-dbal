@@ -31,8 +31,8 @@ class ParentSchema(IdSchema):
 
 
 class PaginationSchema(BaseSchema):
-    page = fields.Integer(required=True, validate=[validate.Range(min=0)])
-    per_page = fields.Integer(required=True, validate=[validate.Range(min=0)])
+    page = fields.Integer(required=True, validate=[validate.Range(min=1)])
+    per_page = fields.Integer(required=True, validate=[validate.Range(min=1)])
     pages = fields.Integer(required=True, validate=[validate.Range(min=0)])
     total = fields.Integer(required=True, validate=[validate.Range(min=0)])
 
