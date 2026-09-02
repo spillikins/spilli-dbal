@@ -30,6 +30,8 @@ from sqlalchemy.orm.exc import StaleDataError
 def compile_error_handler(e: CompileError) -> None:
     if e.args[0].startswith('Unconsumed column names:'):
         raise DBALColumnNonExistException(e)
+    else:
+        raise NotImplementedError(f'DBAL <{e.args[0]}> not implemented.')
 
 
 def integrity_error_handler(e: IntegrityError, s: Session) -> None:
