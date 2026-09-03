@@ -23,7 +23,12 @@ def test_statement_maker__filter__lt(fx_db, fx_make_stmt, fx_parent__create):
     compiled_stmt = statement_maker.compile().string
 
     compiled_control_stmt = (
-        select(Parents).where(Parents.created_at < parent_1.id).limit(0).offset(1).compile().string
+        select(Parents)
+        .where(Parents.created_at < parent_1.created_at)
+        .limit(0)
+        .offset(1)
+        .compile()
+        .string
     )
 
     assert compiled_stmt == compiled_control_stmt
@@ -41,7 +46,12 @@ def test_statement_maker__filter__le(fx_db, fx_make_stmt, fx_parents__non_deleti
     compiled_stmt = statement_maker.compile().string
 
     compiled_control_stmt = (
-        select(Parents).where(Parents.created_at <= parent_1.id).limit(0).offset(1).compile().string
+        select(Parents)
+        .where(Parents.created_at <= parent_1.created_at)
+        .limit(0)
+        .offset(1)
+        .compile()
+        .string
     )
 
     assert compiled_stmt in compiled_control_stmt
@@ -95,7 +105,12 @@ def test_statement_maker__filter__ge(fx_db, fx_make_stmt, fx_parents__non_deleti
     compiled_stmt = statement_maker.compile().string
 
     compiled_control_stmt = (
-        select(Parents).where(Parents.created_at >= parent_1.id).limit(0).offset(1).compile().string
+        select(Parents)
+        .where(Parents.created_at >= parent_1.created_at)
+        .limit(0)
+        .offset(1)
+        .compile()
+        .string
     )
 
     assert compiled_stmt in compiled_control_stmt
@@ -113,7 +128,12 @@ def test_statement_maker__filter__gt(fx_db, fx_make_stmt, fx_parents__non_deleti
     compiled_stmt = statement_maker.compile().string
 
     compiled_control_stmt = (
-        select(Parents).where(Parents.created_at > parent_1.id).limit(0).offset(1).compile().string
+        select(Parents)
+        .where(Parents.created_at > parent_1.created_at)
+        .limit(0)
+        .offset(1)
+        .compile()
+        .string
     )
 
     assert compiled_stmt in compiled_control_stmt
@@ -178,7 +198,7 @@ def test_statement_maker__filter__le_ge(fx_db, fx_make_stmt, fx_parents__non_del
 
     compiled_control_stmt = (
         select(Parents)
-        .where(Parents.created_at <= parent_1.id, Parents.created_at >= parent_1.id)
+        .where(Parents.created_at <= parent_1.created_at, Parents.created_at >= parent_1.id)
         .limit(0)
         .offset(1)
         .compile()

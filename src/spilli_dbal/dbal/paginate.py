@@ -14,8 +14,7 @@ class PageMixin:
     _search_prefixes = ['contain']
 
     _sort_prefixes = ['sort']
-    _asc_value = 'asc'
-    _desc_value = 'desc'
+    _sort_value = {'asc': 'asc', 'desc': 'desc'}
 
     def _extract_expressions(self, params: dict[str, Any]):
         order_by = []
@@ -29,7 +28,7 @@ class PageMixin:
             if prefix in self._filter_prefixes:
                 filters.append({'col': param, 'opr': prefix, 'value': value})
             elif prefix in self._sort_prefixes:
-                order_by.append({'col': param, 'opr': value})
+                order_by.append({'col': param, 'opr': self._sort_value[value]})
             elif prefix in self._search_prefixes:
                 filters.append({'col': param, 'opr': 'ilike', 'value': value})
             else:
@@ -38,12 +37,8 @@ class PageMixin:
         return order_by, filters
 
     def query_string_to_sql_json(
-        self,
-        page: int,
-        per_page: int,
-        ids: list[str] | None = None,
-        **params: dict[str, Any],
-    ) -> dict[str, Any]:
+        self, page: int, per_page: int, ids: list[str] | None = None, **params: dict[str, Any]
+    ) -> Any:
         sql_as_json = {'limit': per_page, 'offset': (page - 1) * per_page}
 
         order_by, filters = self._extract_expressions(params)
@@ -66,13 +61,13 @@ class PageMixin:
         per_page: int = 20,
         include_metadata: bool = False,
         **data: dict[str, Any],
-    ) -> dict[str, Any]:
+    ) -> Any:
 
         if page < 1:
             raise DBALPaginateException(f'Page <{page}> must be greater <1>.')
 
         if per_page < 1:
-            raise DBALPaginateException(f'Page <{per_page}> must be greater <1>.')
+            raise DBALPaginateException(f'Per page <{per_page}> must be greater <1>.')
 
         sql_as_json = self.query_string_to_sql_json(ids=ids, page=page, per_page=per_page, **data)
 

@@ -3,7 +3,6 @@ from typing import Literal
 
 from marshmallow import fields
 from marshmallow import validate
-from marshmallow import validates_schema
 from spilli_dbal.schemas import BaseSchema
 from sqlalchemy import and_
 from sqlalchemy import or_
@@ -19,10 +18,6 @@ class FilterSchema(BaseSchema):
     )
     value = fields.Raw(required=True)
 
-    @validates_schema
-    def validate_datetime_fields(self, data: dict, **kwargs) -> None:
-        pass
-
 
 class OrderBySchema(BaseSchema):
     col = fields.String(required=True, validate=[validate.Length(min=1)])
@@ -31,6 +26,7 @@ class OrderBySchema(BaseSchema):
 
 class WhereSchema(BaseSchema):
     and_ = fields.List(fields.Nested(FilterSchema), data_key='and')
+    or_ = fields.List(fields.Nested(FilterSchema), data_key='or')
 
 
 class SQLJSONSchema(BaseSchema):
@@ -83,7 +79,7 @@ class StatementMaker:
     ) -> bool | Any:
         if opr == 'lt':
             return getattr(self._model, col) < value
-        if opr == 'le':
+        elif opr == 'le':
             return getattr(self._model, col) <= value
         elif opr == 'eq':
             return getattr(self._model, col) == value

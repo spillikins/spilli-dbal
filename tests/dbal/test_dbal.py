@@ -71,7 +71,7 @@ def test_dbal__update(fx_db, fx_parent_dbal):
     updated = fx_parent_dbal(session_db).update(new.id, **updated_params)
 
     assert updated.id == new.id
-    assert updated_params['first'] == new.first
+    assert updated_params['first'] == updated.first
 
 
 def test_dbal__bulk_update(fx_db, fx_parent_dbal):
@@ -85,8 +85,8 @@ def test_dbal__bulk_update(fx_db, fx_parent_dbal):
 
     result = fx_parent_dbal(session_db).read(new.id)
 
-    assert new.id == result.id
-    assert new.first == result.first
+    assert result.id == updated_params[0]['id']
+    assert result.first == updated_params[0]['first']
 
 
 def test_dbal__delete(fx_db, fx_parent_dbal):

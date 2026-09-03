@@ -30,6 +30,8 @@ from sqlalchemy.orm.exc import StaleDataError
 def compile_error_handler(e: CompileError) -> None:
     if e.args[0].startswith('Unconsumed column names:'):
         raise DBALColumnNonExistException(e)
+    else:
+        raise NotImplementedError(f'DBAL <{e.args[0]}> not implemented.')
 
 
 def integrity_error_handler(e: IntegrityError, s: Session) -> None:
@@ -191,8 +193,6 @@ class SqlaDBAL[M](PageMixin):
 
     def delete(self, id: Any) -> None:
         self._session.execute(delete(self._model).where(self._model.id == id))
-        self._session.commit()
 
     def bulk_delete(self, ids: list[Any]) -> None:
         self._session.execute(delete(self._model).where(self._model.id.in_(ids)))
-        self._session.commit()
