@@ -5,7 +5,7 @@ from tests.conftest import UNIQUE_STRING
 
 
 def test_dbal__create(fx_db, fx_parent_dbal):
-    session_db, parents_model, _, _ = fx_db
+    session_db = fx_db
 
     params = {'first': next(UNIQUE_STRING)}
     new = fx_parent_dbal(session_db).create(**params)
@@ -15,7 +15,7 @@ def test_dbal__create(fx_db, fx_parent_dbal):
 
 
 def test_dbal__bulk_create(fx_db, fx_parent_dbal):
-    session_db, parents_model, _, _ = fx_db
+    session_db = fx_db
 
     data = [{'first': next(UNIQUE_STRING)}]
     fx_parent_dbal(session_db).bulk_create(data)
@@ -27,7 +27,7 @@ def test_dbal__bulk_create(fx_db, fx_parent_dbal):
 
 
 def test_dbal__read(fx_db, fx_parent_dbal):
-    session_db, parents_model, _, _ = fx_db
+    session_db = fx_db
 
     params = {'first': next(UNIQUE_STRING)}
     new = fx_parent_dbal(session_db).create(**params)
@@ -39,7 +39,7 @@ def test_dbal__read(fx_db, fx_parent_dbal):
 
 
 def test_dbal__bulk_read(fx_db, fx_parent_dbal):
-    session_db, parents_model, _, _ = fx_db
+    session_db = fx_db
 
     params = {'first': next(UNIQUE_STRING)}
     new = fx_parent_dbal(session_db).create(**params)
@@ -51,7 +51,7 @@ def test_dbal__bulk_read(fx_db, fx_parent_dbal):
 
 
 def test_dbal__read_all(fx_db, fx_parent_dbal):
-    session_db, parents_model, _, _ = fx_db
+    session_db = fx_db
 
     params = {'first': next(UNIQUE_STRING)}
     fx_parent_dbal(session_db).create(**params)
@@ -62,7 +62,7 @@ def test_dbal__read_all(fx_db, fx_parent_dbal):
 
 
 def test_dbal__update(fx_db, fx_parent_dbal):
-    session_db, parents_model, _, _ = fx_db
+    session_db = fx_db
 
     params = {'first': next(UNIQUE_STRING)}
     new = fx_parent_dbal(session_db).create(**params)
@@ -75,7 +75,7 @@ def test_dbal__update(fx_db, fx_parent_dbal):
 
 
 def test_dbal__bulk_update(fx_db, fx_parent_dbal):
-    session_db, parents_model, _, _ = fx_db
+    session_db = fx_db
 
     params = {'first': next(UNIQUE_STRING)}
     new = fx_parent_dbal(session_db).create(**params)
@@ -90,7 +90,7 @@ def test_dbal__bulk_update(fx_db, fx_parent_dbal):
 
 
 def test_dbal__delete(fx_db, fx_parent_dbal):
-    session_db, parents_model, _, _ = fx_db
+    session_db = fx_db
 
     new_1 = fx_parent_dbal(session_db).create(**{'first': next(UNIQUE_STRING)})
     new_2 = fx_parent_dbal(session_db).create(**{'first': next(UNIQUE_STRING)})
@@ -105,7 +105,7 @@ def test_dbal__delete(fx_db, fx_parent_dbal):
 
 
 def test_dbal__bulk_delete(fx_db, fx_parent_dbal):
-    session_db, parents_model, _, _ = fx_db
+    session_db = fx_db
 
     new_1 = fx_parent_dbal(session_db).create(**{'first': next(UNIQUE_STRING)})
     new_2 = fx_parent_dbal(session_db).create(**{'first': next(UNIQUE_STRING)})
@@ -120,7 +120,7 @@ def test_dbal__bulk_delete(fx_db, fx_parent_dbal):
 
 
 def test_dbal__read_one_filtered(fx_db, fx_parent_dbal):
-    session_db, parents_model, _, _ = fx_db
+    session_db = fx_db
 
     new_1 = fx_parent_dbal(session_db).create(**{'first': next(UNIQUE_STRING)})
     fx_parent_dbal(session_db).create(**{'first': next(UNIQUE_STRING)})
@@ -131,7 +131,7 @@ def test_dbal__read_one_filtered(fx_db, fx_parent_dbal):
 
 
 def test_dbal__read_filtered_list(fx_db, fx_parent_dbal):
-    session_db, parents_model, _, _ = fx_db
+    session_db = fx_db
 
     new_1 = fx_parent_dbal(session_db).create(**{'first': next(UNIQUE_STRING)})
     new_2 = fx_parent_dbal(session_db).create(**{'first': next(UNIQUE_STRING)})
@@ -158,7 +158,7 @@ def test_dbal__read_filtered_list(fx_db, fx_parent_dbal):
 
 
 def test_dbal__read_filtered_list_with_sort(fx_db, fx_parent_dbal):
-    session_db, parents_model, _, _ = fx_db
+    session_db = fx_db
 
     new_1 = fx_parent_dbal(session_db).create(**{'first': next(UNIQUE_STRING)})
     new_2 = fx_parent_dbal(session_db).create(**{'first': next(UNIQUE_STRING)})

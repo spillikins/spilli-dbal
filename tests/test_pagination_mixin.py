@@ -55,8 +55,7 @@ def test_pagination__searching(fx_parent__create, fx_parent__paginate):
         assert search_substring in item['first']
 
 
-def test_pagination__get_fields_of_list(fx_db, fx_parent__create, fx_parent__paginate):
-    _, _, _, Fathers = fx_db
+def test_pagination__get_fields_of_list(fx_parent__create, fx_parent__paginate):
     fx_parent__create({'first': next(UNIQUE_STRING)})
 
     data = {'fields': ['items.id', 'items.first']}
@@ -126,6 +125,8 @@ def test_pagination__get_non_exist_page(fx_parent__create, fx_parent__paginate, 
 def test_pagination__get_pages(fx_parent__create, fx_parent__paginate, page, per_page):
     fx_parent__create({'first': next(UNIQUE_STRING)})
     fx_parent__create({'first': next(UNIQUE_STRING)})
+    fx_parent__create({'first': next(UNIQUE_STRING)})
+    fx_parent__create({'first': next(UNIQUE_STRING)})
 
     data = {'page': page, 'per_page': per_page, 'include_metadata': 'enable'}
     items = fx_parent__paginate(data)
@@ -151,7 +152,7 @@ def test_pagination__count_pages_total(fx_parent__create, fx_parent__paginate):
     assert len(items['items']) == 1
 
 
-def test_pagination__without_meta_pagination(fx_db, fx_parent__create, fx_parent__paginate):
+def test_pagination__without_meta_pagination(fx_parent__create, fx_parent__paginate):
     fx_parent__create({'first': next(UNIQUE_STRING)})
     fx_parent__create({'first': next(UNIQUE_STRING)})
 

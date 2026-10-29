@@ -18,8 +18,8 @@ def test_dbal__subclass_without_model_error():
     assert e.value.args[0] == '<BrokenDBAL> must be created as SqlaDBAL[Model] subclass.'
 
 
-def test_dbal__subclass_multiple_inheritance(fx_db):
-    _, Parents, _, _ = fx_db
+def test_dbal__subclass_multiple_inheritance(fx_table_models):
+    Parents, _, _ = fx_table_models
 
     class Extra:
         """Extra mixin."""

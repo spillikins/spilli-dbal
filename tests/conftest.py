@@ -23,21 +23,23 @@ UNIQUE_STRING = (f'name_{number}' for number in range(1_000))
 
 
 @pytest.fixture(scope='session')
-def fx_db_connection():
-    engine = create_engine('sqlite://', echo=True, future=True)
-    session = Session(engine)
-    Base = declarative_base()
-
-    session.execute(text('PRAGMA foreign_keys=ON'))
-
-    return Base, engine, session
+def fx_base():
+    return declarative_base()
 
 
 @pytest.fixture(scope='session')
-def fx_db(fx_db_connection):
-    Base, engine, session = fx_db_connection
+def fx_db_connection():
+    engine = create_engine('sqlite://', echo=True, future=True)
+    session = Session(engine)
 
-    class Parents(Base, ModelMixin):
+    session.execute(text('PRAGMA foreign_keys=ON'))
+
+    return engine, session
+
+
+@pytest.fixture(scope='session')
+def fx_table_models(fx_base):
+    class Parents(fx_base, ModelMixin):
         __tablename__ = 'parents'
 
         first: Mapped[str] = mapped_column()
@@ -52,7 +54,7 @@ def fx_db(fx_db_connection):
         def child_count(self) -> int:
             return len(self.children)
 
-    class Children(Base, ModelMixin):
+    class Children(fx_base, ModelMixin):
         __tablename__ = 'children'
 
         first: Mapped[str] = mapped_column()
@@ -63,20 +65,27 @@ def fx_db(fx_db_connection):
             'Parents', backref='children', cascade='all, delete-orphan', single_parent=True
         )
 
-    class Fathers(Base, ModelMixin):
+    class Fathers(fx_base, ModelMixin):
         __tablename__ = 'fathers'
 
         first: Mapped[str] = mapped_column()
         second: Mapped[str | None] = mapped_column()
 
-    Base.metadata.create_all(engine)
-
-    return session, Parents, Children, Fathers
+    return Parents, Children, Fathers
 
 
 @pytest.fixture(scope='session')
-def fx_parent_dbal(fx_db):
-    session_db, parents_model, _, _ = fx_db
+def fx_db(fx_db_connection, fx_base, fx_table_models):
+    engine, session = fx_db_connection
+
+    fx_base.metadata.create_all(engine)
+
+    return session
+
+
+@pytest.fixture(scope='session')
+def fx_parent_dbal(fx_table_models):
+    parents_model, _, _ = fx_table_models
 
     class ParentsDBAL(SqlaDBAL[parents_model]):
         """DBAL for Parents."""
@@ -86,7 +95,7 @@ def fx_parent_dbal(fx_db):
 
 @pytest.fixture(scope='session')
 def fx_parent__paginate(fx_db, fx_parent_dbal):
-    session_db, parents_model, _, _ = fx_db
+    session_db = fx_db
 
     def _f(data: dict[str, Any]):
         params = {k: v for k, v in data.items() if k not in ['fields']}
@@ -103,7 +112,7 @@ def fx_parent__paginate(fx_db, fx_parent_dbal):
 
 @pytest.fixture(scope='session')
 def fx_parent__create(fx_db, fx_parent_dbal):
-    session_db, parents_model, _, _ = fx_db
+    session_db = fx_db
 
     def _f(data: dict[str, Any]):
         return fx_parent_dbal(session_db).create(**data)
@@ -113,7 +122,7 @@ def fx_parent__create(fx_db, fx_parent_dbal):
 
 @pytest.fixture(scope='session')
 def fx_parent__update(fx_db, fx_parent_dbal):
-    session_db, parents_model, _, _ = fx_db
+    session_db = fx_db
 
     def _f(data: dict[str, Any]):
         return fx_parent_dbal(session_db).update(**data)
@@ -122,8 +131,9 @@ def fx_parent__update(fx_db, fx_parent_dbal):
 
 
 @pytest.fixture(scope='session')
-def fx_child__create(fx_db, fx_parent_dbal):
-    session_db, _, child_model, _ = fx_db
+def fx_child__create(fx_db, fx_table_models):
+    session_db = fx_db
+    _, child_model, _ = fx_table_models
 
     class ChildDBAL(SqlaDBAL[child_model]):
         """DBAL for Children."""
@@ -135,8 +145,9 @@ def fx_child__create(fx_db, fx_parent_dbal):
 
 
 @pytest.fixture(scope='session')
-def fx_father__create(fx_db, fx_parent_dbal):
-    session_db, _, _, father_model = fx_db
+def fx_father__create(fx_db, fx_table_models):
+    session_db = fx_db
+    _, _, father_model = fx_table_models
 
     class FathersDBAL(SqlaDBAL[father_model]):
         """DBAL for Fathers."""
@@ -165,7 +176,7 @@ def fx_parents__non_deletion(fx_parent__create, fx_child__create, fx_father__cre
 
 
 @pytest.fixture
-def fx_make_stmt(fx_db, fx_parents__non_deletion):
+def fx_make_stmt(fx_parents__non_deletion):
     def _create_item(
         model,
         where: dict[str, list[Any]] = None,

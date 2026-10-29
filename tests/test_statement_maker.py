@@ -4,15 +4,15 @@ from sqlalchemy import select
 from tests.conftest import UNIQUE_STRING
 
 
-def test_statement_maker__init(fx_db):
-    _, Parents, _, _ = fx_db
+def test_statement_maker__init(fx_table_models):
+    Parents, _, _ = fx_table_models
 
     stmt = StatementMaker(Parents, limit=0, offset=1).make_stmt()
     assert stmt.compile().string == select(Parents).limit(1).offset(1).compile().string
 
 
-def test_statement_maker__filter__lt(fx_db, fx_make_stmt, fx_parent__create):
-    _, Parents, _, _ = fx_db
+def test_statement_maker__filter__lt(fx_table_models, fx_make_stmt, fx_parent__create):
+    Parents, _, _ = fx_table_models
 
     parent_1 = fx_parent__create({'first': next(UNIQUE_STRING)})
 
@@ -34,8 +34,8 @@ def test_statement_maker__filter__lt(fx_db, fx_make_stmt, fx_parent__create):
     assert compiled_stmt == compiled_control_stmt
 
 
-def test_statement_maker__filter__le(fx_db, fx_make_stmt, fx_parents__non_deletion):
-    _, Parents, _, _ = fx_db
+def test_statement_maker__filter__le(fx_table_models, fx_make_stmt, fx_parents__non_deletion):
+    Parents, _, _ = fx_table_models
 
     parent_1 = fx_parents__non_deletion()
 
@@ -57,8 +57,8 @@ def test_statement_maker__filter__le(fx_db, fx_make_stmt, fx_parents__non_deleti
     assert compiled_stmt in compiled_control_stmt
 
 
-def test_statement_maker__filter__eq(fx_db, fx_make_stmt, fx_parents__non_deletion):
-    _, Parents, _, _ = fx_db
+def test_statement_maker__filter__eq(fx_table_models, fx_make_stmt, fx_parents__non_deletion):
+    Parents, _, _ = fx_table_models
 
     parent_1 = fx_parents__non_deletion()
 
@@ -75,8 +75,8 @@ def test_statement_maker__filter__eq(fx_db, fx_make_stmt, fx_parents__non_deleti
     assert compiled_stmt in compiled_control_stmt
 
 
-def test_statement_maker__filter__ne(fx_db, fx_make_stmt, fx_parents__non_deletion):
-    _, Parents, _, _ = fx_db
+def test_statement_maker__filter__ne(fx_table_models, fx_make_stmt, fx_parents__non_deletion):
+    Parents, _, _ = fx_table_models
 
     parent_1 = fx_parents__non_deletion()
 
@@ -93,8 +93,8 @@ def test_statement_maker__filter__ne(fx_db, fx_make_stmt, fx_parents__non_deleti
     assert compiled_stmt in compiled_control_stmt
 
 
-def test_statement_maker__filter__ge(fx_db, fx_make_stmt, fx_parents__non_deletion):
-    _, Parents, _, _ = fx_db
+def test_statement_maker__filter__ge(fx_table_models, fx_make_stmt, fx_parents__non_deletion):
+    Parents, _, _ = fx_table_models
 
     parent_1 = fx_parents__non_deletion()
 
@@ -116,8 +116,8 @@ def test_statement_maker__filter__ge(fx_db, fx_make_stmt, fx_parents__non_deleti
     assert compiled_stmt in compiled_control_stmt
 
 
-def test_statement_maker__filter__gt(fx_db, fx_make_stmt, fx_parents__non_deletion):
-    _, Parents, _, _ = fx_db
+def test_statement_maker__filter__gt(fx_table_models, fx_make_stmt, fx_parents__non_deletion):
+    Parents, _, _ = fx_table_models
 
     parent_1 = fx_parents__non_deletion()
 
@@ -139,8 +139,8 @@ def test_statement_maker__filter__gt(fx_db, fx_make_stmt, fx_parents__non_deleti
     assert compiled_stmt in compiled_control_stmt
 
 
-def test_statement_maker__filter_in(fx_db, fx_make_stmt, fx_parents__non_deletion):
-    _, Parents, _, _ = fx_db
+def test_statement_maker__filter_in(fx_table_models, fx_make_stmt, fx_parents__non_deletion):
+    Parents, _, _ = fx_table_models
 
     parent_1 = fx_parents__non_deletion()
 
@@ -157,8 +157,8 @@ def test_statement_maker__filter_in(fx_db, fx_make_stmt, fx_parents__non_deletio
     assert compiled_stmt in compiled_control_stmt
 
 
-def test_statement_maker__filter_contains(fx_db, fx_make_stmt, fx_parents__non_deletion):
-    _, Parents, _, _ = fx_db
+def test_statement_maker__filter_contains(fx_table_models, fx_make_stmt, fx_parents__non_deletion):
+    Parents, _, _ = fx_table_models
 
     parent_1 = fx_parents__non_deletion()
 
@@ -180,8 +180,8 @@ def test_statement_maker__filter_contains(fx_db, fx_make_stmt, fx_parents__non_d
     assert compiled_stmt in compiled_control_stmt
 
 
-def test_statement_maker__filter__le_ge(fx_db, fx_make_stmt, fx_parents__non_deletion):
-    _, Parents, _, _ = fx_db
+def test_statement_maker__filter__le_ge(fx_table_models, fx_make_stmt, fx_parents__non_deletion):
+    Parents, _, _ = fx_table_models
 
     parent_1 = fx_parents__non_deletion()
 
@@ -208,8 +208,8 @@ def test_statement_maker__filter__le_ge(fx_db, fx_make_stmt, fx_parents__non_del
     assert compiled_stmt in compiled_control_stmt
 
 
-def test_statement_maker__sort(fx_db, fx_make_stmt):
-    _, Parents, _, _ = fx_db
+def test_statement_maker__sort(fx_table_models, fx_make_stmt):
+    Parents, _, _ = fx_table_models
 
     statement_maker = fx_make_stmt(Parents, order_by=[{'col': 'id', 'opr': 'asc'}])
     compiled_stmt = statement_maker.compile().string

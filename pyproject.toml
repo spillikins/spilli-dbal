@@ -4,7 +4,7 @@ requires = ["setuptools>=69", "wheel"]
 
 [project]
 authors = [
-  {name = "Konstantin Fadeev", email = "fadeev@legalact.pro"}
+  { name = "Konstantin Fadeev", email = "fadeev@legalact.pro" }
 ]
 classifiers = [
   "Development Status :: 5 - Production/Stable",
@@ -20,7 +20,7 @@ dependencies = [
   "marshmallow>=4.0.0"
 ]
 description = "Web-framework independent CRUD tools for working with database via SQLAlchemy."
-license = {file = "LICENSE"}
+license = { file = "LICENSE" }
 name = "Spilli-DBAL"
 readme = "README.md"
 requires-python = ">=3.12"
@@ -28,10 +28,12 @@ version = "1.1.1"
 
 [project.optional-dependencies]
 dev = [
+  "aiosqlite==0.22.1",
   "build==1.5.0",
-  "psycopg[binary]==3.3.4",
   "pre-commit==4.6.2",
+  "psycopg[binary]==3.3.4",
   "pytest==9.1.1",
+  "pytest-asyncio==0.24.0",
   "pytest-cov==7.1.0",
   "python-dotenv==1.2.3",
   "tox==4.60.0",
