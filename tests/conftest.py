@@ -75,7 +75,7 @@ def fx_table_models(fx_base):
 
 
 @pytest.fixture(scope='session')
-def fx_db(fx_db_connection, fx_base, fx_table_models):
+def fx_session(fx_db_connection, fx_base, fx_table_models):
     engine, session = fx_db_connection
 
     fx_base.metadata.create_all(engine)
@@ -93,14 +93,12 @@ def fx_parent_dbal(fx_table_models):
     return ParentsDBAL
 
 
-@pytest.fixture(scope='session')
-def fx_parent__paginate(fx_db, fx_parent_dbal):
-    session_db = fx_db
-
-    def _f(data: dict[str, Any]):
+@pytest.fixture
+def fx_parent__paginate(fx_parent_dbal):
+    def _f(session: Session, data: dict[str, Any]):
         params = {k: v for k, v in data.items() if k not in ['fields']}
 
-        result = fx_parent_dbal(session_db).paginate(**params)
+        result = fx_parent_dbal(session).paginate(**params)
 
         only = data.get('fields')
         serialized_result = ParentPaginationSchema(only=only).dump(result)
@@ -110,66 +108,60 @@ def fx_parent__paginate(fx_db, fx_parent_dbal):
     return _f
 
 
-@pytest.fixture(scope='session')
-def fx_parent__create(fx_db, fx_parent_dbal):
-    session_db = fx_db
-
-    def _f(data: dict[str, Any]):
-        return fx_parent_dbal(session_db).create(**data)
-
-    return _f
-
-
-@pytest.fixture(scope='session')
-def fx_parent__update(fx_db, fx_parent_dbal):
-    session_db = fx_db
-
-    def _f(data: dict[str, Any]):
-        return fx_parent_dbal(session_db).update(**data)
-
-    return _f
-
-
-@pytest.fixture(scope='session')
-def fx_child__create(fx_db, fx_table_models):
-    session_db = fx_db
-    _, child_model, _ = fx_table_models
-
-    class ChildDBAL(SqlaDBAL[child_model]):
-        """DBAL for Children."""
-
-    def _f(data: dict[str, Any]):
-        return ChildDBAL(session_db).create(**data)
-
-    return _f
-
-
-@pytest.fixture(scope='session')
-def fx_father__create(fx_db, fx_table_models):
-    session_db = fx_db
-    _, _, father_model = fx_table_models
-
-    class FathersDBAL(SqlaDBAL[father_model]):
-        """DBAL for Fathers."""
-
-    def _f(data: dict[str, Any]):
-        return FathersDBAL(session_db).create(**data)
+@pytest.fixture
+def fx_parent__create(fx_parent_dbal):
+    def _f(session: Session, data: dict[str, Any]):
+        return fx_parent_dbal(session).create(**data)
 
     return _f
 
 
 @pytest.fixture
-def fx_parents__non_deletion(fx_parent__create, fx_child__create, fx_father__create):
+def fx_parent__update(fx_parent_dbal):
+    def _f(session: Session, data: dict[str, Any]):
+        return fx_parent_dbal(session).update(**data)
+
+    return _f
+
+
+@pytest.fixture
+def fx_child__create(fx_table_models):
+    _, child_model, _ = fx_table_models
+
+    class ChildDBAL(SqlaDBAL[child_model]):
+        """DBAL for Children."""
+
+    def _f(session: Session, data: dict[str, Any]):
+        return ChildDBAL(session).create(**data)
+
+    return _f
+
+
+@pytest.fixture
+def fx_father__create(fx_table_models):
+    _, _, father_model = fx_table_models
+
+    class FathersDBAL(SqlaDBAL[father_model]):
+        """DBAL for Fathers."""
+
+    def _f(session: Session, data: dict[str, Any]):
+        return FathersDBAL(session).create(**data)
+
+    return _f
+
+
+@pytest.fixture
+def fx_parents__non_deletion(fx_session, fx_parent__create, fx_child__create, fx_father__create):
     def _create_item() -> Result:
-        new_father = fx_father__create({'first': next(UNIQUE_STRING)})
+        new_father = fx_father__create(fx_session, {'first': next(UNIQUE_STRING)})
 
         parent_data = {
             'first': next(UNIQUE_STRING),
             'second': f'full {next(UNIQUE_STRING)}',
             'father_id': new_father.id,
         }
-        new_parent = fx_parent__create(parent_data)
-        fx_child__create({'first': next(UNIQUE_STRING), 'parent_id': new_parent.id})
+        new_parent = fx_parent__create(fx_session, parent_data)
+        fx_child__create(fx_session, {'first': next(UNIQUE_STRING), 'parent_id': new_parent.id})
         return new_parent
 
     return _create_item

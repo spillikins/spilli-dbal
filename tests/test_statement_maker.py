@@ -11,10 +11,10 @@ def test_statement_maker__init(fx_table_models):
     assert stmt.compile().string == select(Parents).limit(1).offset(1).compile().string
 
 
-def test_statement_maker__filter__lt(fx_table_models, fx_make_stmt, fx_parent__create):
+def test_statement_maker__filter__lt(fx_table_models, fx_make_stmt, fx_parent__create, fx_session):
     Parents, _, _ = fx_table_models
 
-    parent_1 = fx_parent__create({'first': next(UNIQUE_STRING)})
+    parent_1 = fx_parent__create(fx_session, {'first': next(UNIQUE_STRING)})
 
     statement_maker = fx_make_stmt(
         Parents,

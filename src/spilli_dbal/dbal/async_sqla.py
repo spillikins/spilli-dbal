@@ -1,6 +1,6 @@
+from collections.abc import Sequence
 from typing import Any
 from typing import Literal
-from typing import Sequence
 
 from spilli_dbal.dbal.exceptions import DBALCreateException
 from spilli_dbal.dbal.exceptions import DBALMultipleResultsFoundException
