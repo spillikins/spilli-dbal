@@ -8,8 +8,8 @@ from spilli_dbal.dbal.exceptions import DBALPaginateException
 from tests.conftest import UNIQUE_STRING
 
 
-def test_pagination__pagination(fx_session, fx_parent__create, fx_parent__paginate):
-    ids = [fx_parent__create(fx_session, {'first': next(UNIQUE_STRING)}).id for _ in range(3)]
+def test_pagination__pagination(fx_session, fx_parents__bulk, fx_parent__paginate):
+    ids = [parent.id for parent in fx_parents__bulk(3)]
 
     data = {'page': 1, 'per_page': 2, 'ids': ids, 'fields': ['items.id', 'items.first']}
     items = fx_parent__paginate(fx_session, data)
@@ -20,18 +20,18 @@ def test_pagination__pagination(fx_session, fx_parent__create, fx_parent__pagina
         assert UUID(item['id'])
         assert isinstance(item['first'], str)
 
-    data = {'page': 1, 'per_page': 2, 'ids': ids, 'fields': ['items.id', 'items.first']}
+    data = {'page': 2, 'per_page': 2, 'ids': ids, 'fields': ['items.id', 'items.first']}
     items = fx_parent__paginate(fx_session, data)
 
     assert items['items']
-    assert len(items['items']) == 2
+    assert len(items['items']) == 1
     for item in items['items']:
         assert UUID(item['id'])
         assert isinstance(item['first'], str)
 
 
-def test_pagination__sorting(fx_session, fx_parent__create, fx_parent__paginate):
-    ids = [fx_parent__create(fx_session, {'first': next(UNIQUE_STRING)}).id for _ in range(3)]
+def test_pagination__sorting(fx_session, fx_parents__bulk, fx_parent__paginate):
+    ids = [parent.id for parent in fx_parents__bulk(3)]
 
     data = {'ids': ids, 'sort__created_at': 'asc'}
     items_asc = fx_parent__paginate(fx_session, data)
@@ -44,9 +44,8 @@ def test_pagination__sorting(fx_session, fx_parent__create, fx_parent__paginate)
     assert asc_ids[0] == desc_ids[-1]
 
 
-def test_pagination__searching(fx_session, fx_parent__create, fx_parent__paginate):
-    new_item = fx_parent__create(fx_session, {'first': next(UNIQUE_STRING)})
-    fx_parent__create(fx_session, {'first': next(UNIQUE_STRING)})
+def test_pagination__searching(fx_session, fx_parents__bulk, fx_parent__paginate):
+    new_item, _ = fx_parents__bulk(2)
     search_substring = new_item.first[3:]
 
     data = {'fields': ['items.id', 'items.first'], 'contain__first': search_substring}
@@ -55,8 +54,8 @@ def test_pagination__searching(fx_session, fx_parent__create, fx_parent__paginat
         assert search_substring in item['first']
 
 
-def test_pagination__get_fields_of_list(fx_session, fx_parent__create, fx_parent__paginate):
-    fx_parent__create(fx_session, {'first': next(UNIQUE_STRING)})
+def test_pagination__get_fields_of_list(fx_session, fx_parents__bulk, fx_parent__paginate):
+    fx_parents__bulk(1)
 
     data = {'fields': ['items.id', 'items.first']}
     items = fx_parent__paginate(fx_session, data)
@@ -65,10 +64,10 @@ def test_pagination__get_fields_of_list(fx_session, fx_parent__create, fx_parent
 
 
 def test_pagination__filtrating(
-    fx_session, fx_parent__create, fx_parent__update, fx_parent__paginate
+    fx_session, fx_parent__create, fx_parents__bulk, fx_parent__update, fx_parent__paginate
 ):
     first_item = fx_parent__create(fx_session, {'first': next(UNIQUE_STRING)})
-    _ = [fx_parent__create(fx_session, {'first': next(UNIQUE_STRING)}) for _ in range(10)]
+    fx_parents__bulk(10)
 
     patched_item_payload = {'id': first_item.id, 'first': 'first for test filtrating'}
     patched_first_item = fx_parent__update(fx_session, patched_item_payload)
@@ -80,14 +79,13 @@ def test_pagination__filtrating(
     assert items['items'][0]['id'] == str(first_item.id)
 
 
-def test_pagination__interval_filtration(fx_session, fx_parent__create, fx_parent__paginate):
-    item_1 = fx_parent__create(fx_session, {'first': next(UNIQUE_STRING)})
-    item_2 = fx_parent__create(fx_session, {'first': next(UNIQUE_STRING)})
-    item_3 = fx_parent__create(fx_session, {'first': next(UNIQUE_STRING)})
+@pytest.mark.parametrize('sort', ['asc', 'desc'])
+def test_pagination__interval_filtration(fx_session, fx_parents__bulk, fx_parent__paginate, sort):
+    item_1, item_2, item_3 = fx_parents__bulk(3)
 
     data = {
         'ids': [item_1.id, item_2.id, item_3.id],
-        'sort__created_at': 'asc',
+        'sort__created_at': sort,
         'ge__created_at': item_1.created_at.replace(tzinfo=timezone.utc),
         'le__created_at': item_2.created_at.replace(tzinfo=timezone.utc),
     }
@@ -95,29 +93,22 @@ def test_pagination__interval_filtration(fx_session, fx_parent__create, fx_paren
 
     assert items_asc['items']
     assert len(items_asc['items']) == 2
-    assert items_asc['items'][0]['id'] == str(item_1.id)
-    assert items_asc['items'][1]['id'] == str(item_2.id)
 
-    data = {
-        'ids': [item_1.id, item_2.id, item_3.id],
-        'sort__created_at': 'desc',
-        'ge__created_at': item_1.created_at.replace(tzinfo=timezone.utc),
-        'le__created_at': item_2.created_at.replace(tzinfo=timezone.utc),
-    }
-    items_desc = fx_parent__paginate(fx_session, data)
+    item_ids = [item['id'] for item in items_asc['items']]
+    db_ids = [str(item_1.id), str(item_2.id)]
 
-    assert items_desc['items']
-    assert len(items_desc['items']) == 2
-    assert items_desc['items'][0]['id'] == str(item_2.id)
-    assert items_desc['items'][1]['id'] == str(item_1.id)
+    if sort == 'asc':
+        assert item_ids == db_ids
+    else:
+        assert item_ids == db_ids[::-1]
 
 
 @pytest.mark.parametrize('page', [-1])
 @pytest.mark.parametrize('per_page', [-1, 0])
 def test_pagination__get_non_exist_page(
-    fx_session, fx_parent__create, fx_parent__paginate, page, per_page
+    fx_session, fx_parents__bulk, fx_parent__paginate, page, per_page
 ):
-    fx_parent__create(fx_session, {'first': next(UNIQUE_STRING)})
+    fx_parents__bulk(1)
 
     data = {'page': page, 'per_page': per_page, 'include_metadata': 'enable'}
     with pytest.raises(DBALPaginateException):
@@ -126,11 +117,8 @@ def test_pagination__get_non_exist_page(
 
 @pytest.mark.parametrize('page', [1, 2])
 @pytest.mark.parametrize('per_page', [1, 2])
-def test_pagination__get_pages(fx_session, fx_parent__create, fx_parent__paginate, page, per_page):
-    fx_parent__create(fx_session, {'first': next(UNIQUE_STRING)})
-    fx_parent__create(fx_session, {'first': next(UNIQUE_STRING)})
-    fx_parent__create(fx_session, {'first': next(UNIQUE_STRING)})
-    fx_parent__create(fx_session, {'first': next(UNIQUE_STRING)})
+def test_pagination__get_pages(fx_session, fx_parents__bulk, fx_parent__paginate, page, per_page):
+    fx_parents__bulk(4)
 
     data = {'page': page, 'per_page': per_page, 'include_metadata': 'enable'}
     items = fx_parent__paginate(fx_session, data)
@@ -144,9 +132,8 @@ def test_pagination__get_pages(fx_session, fx_parent__create, fx_parent__paginat
     assert len(items['items']) == per_page
 
 
-def test_pagination__count_pages_total(fx_session, fx_parent__create, fx_parent__paginate):
-    item_1 = fx_parent__create(fx_session, {'first': next(UNIQUE_STRING)})
-    fx_parent__create(fx_session, {'first': next(UNIQUE_STRING)})
+def test_pagination__count_pages_total(fx_session, fx_parents__bulk, fx_parent__paginate):
+    item_1, _ = fx_parents__bulk(2)
 
     data = {'eq__id': item_1.id, 'include_metadata': 'enable'}
     items = fx_parent__paginate(fx_session, data)
@@ -156,9 +143,8 @@ def test_pagination__count_pages_total(fx_session, fx_parent__create, fx_parent_
     assert len(items['items']) == 1
 
 
-def test_pagination__without_meta_pagination(fx_session, fx_parent__create, fx_parent__paginate):
-    fx_parent__create(fx_session, {'first': next(UNIQUE_STRING)})
-    fx_parent__create(fx_session, {'first': next(UNIQUE_STRING)})
+def test_pagination__without_meta_pagination(fx_session, fx_parents__bulk, fx_parent__paginate):
+    fx_parents__bulk(2)
 
     data = {'page': 1, 'per_page': 2}
     items = fx_parent__paginate(fx_session, data)
@@ -215,8 +201,8 @@ def test_pagination__fields_for_relations(
     ]
 
 
-def test_pagination__pagination__nullable(fx_session, fx_parent__create, fx_parent__paginate):
-    _ = [fx_parent__create(fx_session, {'first': next(UNIQUE_STRING)}).id for _ in range(3)]
+def test_pagination__pagination__nullable(fx_session, fx_parents__bulk, fx_parent__paginate):
+    fx_parents__bulk(3)
 
     data = {'page': 0, 'per_page': 0, 'include_metadata': 'enable'}
 
@@ -226,9 +212,8 @@ def test_pagination__pagination__nullable(fx_session, fx_parent__create, fx_pare
     assert exc.value.args[0] == 'Page <0> must be greater <1>.'
 
 
-def test_pagination__format_param_error(fx_session, fx_parent__create, fx_parent__paginate):
-    item_1 = fx_parent__create(fx_session, {'first': next(UNIQUE_STRING)})
-    fx_parent__create(fx_session, {'first': next(UNIQUE_STRING)})
+def test_pagination__format_param_error(fx_session, fx_parents__bulk, fx_parent__paginate):
+    item_1, _ = fx_parents__bulk(2)
 
     data = {'eq_id': item_1.id}
 

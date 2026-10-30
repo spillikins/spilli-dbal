@@ -151,6 +151,14 @@ def fx_father__create(fx_table_models):
 
 
 @pytest.fixture
+def fx_parents__bulk(fx_session, fx_parent__create):  # noqa: F811
+    def _f(count: int) -> list[Any]:
+        return [fx_parent__create(fx_session, {'first': next(UNIQUE_STRING)}) for _ in range(count)]
+
+    return _f
+
+
+@pytest.fixture
 def fx_parents__non_deletion(fx_session, fx_parent__create, fx_child__create, fx_father__create):
     def _create_item() -> Result:
         new_father = fx_father__create(fx_session, {'first': next(UNIQUE_STRING)})
