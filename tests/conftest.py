@@ -6,6 +6,7 @@ from spilli_dbal import ModelMixin
 from spilli_dbal.dbal import SqlaDBAL
 from spilli_dbal.statement_maker import StatementMaker
 from sqlalchemy import create_engine
+from sqlalchemy import Engine
 from sqlalchemy import ForeignKey
 from sqlalchemy import Select
 from sqlalchemy import text
@@ -28,13 +29,20 @@ def fx_base():
 
 
 @pytest.fixture(scope='session')
-def fx_db_connection():
+def fx_db_engine() -> Engine:
     engine = create_engine('sqlite://', echo=True, future=True)
-    session = Session(engine)
+    return engine
+
+
+@pytest.fixture(scope='session')
+def fx_session(fx_db_engine, fx_base, fx_table_models) -> Session:
+    session = Session(fx_db_engine)
 
     session.execute(text('PRAGMA foreign_keys=ON'))
 
-    return engine, session
+    fx_base.metadata.create_all(fx_db_engine)
+
+    return session
 
 
 @pytest.fixture(scope='session')
@@ -72,15 +80,6 @@ def fx_table_models(fx_base):
         second: Mapped[str | None] = mapped_column()
 
     return Parents, Children, Fathers
-
-
-@pytest.fixture(scope='session')
-def fx_session(fx_db_connection, fx_base, fx_table_models):
-    engine, session = fx_db_connection
-
-    fx_base.metadata.create_all(engine)
-
-    return session
 
 
 @pytest.fixture(scope='session')
@@ -159,7 +158,12 @@ def fx_parents__bulk(fx_session, fx_parent__create):  # noqa: F811
 
 
 @pytest.fixture
-def fx_parents__non_deletion(fx_session, fx_parent__create, fx_child__create, fx_father__create):
+def fx_parents__non_deletion(
+    fx_session,  # noqa: F811
+    fx_parent__create,
+    fx_child__create,
+    fx_father__create,
+):
     def _create_item() -> Result:
         new_father = fx_father__create(fx_session, {'first': next(UNIQUE_STRING)})
 
