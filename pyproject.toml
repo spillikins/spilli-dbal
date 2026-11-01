@@ -31,11 +31,11 @@ dev = [
   "aiosqlite==0.22.1",
   "build==1.5.0",
   "pre-commit==4.6.2",
-  "psycopg[binary]==3.3.4",
-  "pytest==9.1.1",
-  "pytest-asyncio==0.24.0",
+  "psycopg[binary]==3.3.6",
+  "pytest==9.2.0",
+  "pytest-asyncio==1.4.1",
   "pytest-cov==7.1.0",
-  "python-dotenv==1.2.3",
+  "python-dotenv==1.2.4",
   "tox==4.60.0",
   "twine==7.0.0"
 ]
@@ -71,6 +71,9 @@ check-property-returns = true
 check-protected = true
 check-protected-class-methods = true
 disable = ["SIG101", "SIG501"]
+
+[tool.pytest.ini_options]
+asyncio_default_fixture_loop_scope = "function"
 
 [tool.setuptools.packages.find]
 include = ["spilli_dbal*"]

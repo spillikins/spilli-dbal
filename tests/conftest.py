@@ -1,8 +1,11 @@
+from collections.abc import AsyncGenerator
 from typing import Any
 from uuid import UUID
 
 import pytest
+import pytest_asyncio
 from spilli_dbal import ModelMixin
+from spilli_dbal.dbal import AsyncSqlaDBAL
 from spilli_dbal.dbal import SqlaDBAL
 from spilli_dbal.statement_maker import StatementMaker
 from sqlalchemy import create_engine
@@ -11,6 +14,8 @@ from sqlalchemy import ForeignKey
 from sqlalchemy import Select
 from sqlalchemy import text
 from sqlalchemy.engine import Result
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.ext.asyncio import create_async_engine
 from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm import declarative_base
 from sqlalchemy.orm import Mapped
@@ -209,3 +214,73 @@ def fx_make_stmt(fx_parents__non_deletion):
         return stmt
 
     return _create_item
+
+
+# --- Async Infrastructure ---
+
+
+@pytest_asyncio.fixture
+async def fx_async_db_engine():
+    engine = create_async_engine('sqlite+aiosqlite:///:memory:', echo=False)
+    yield engine
+    await engine.dispose()
+
+
+@pytest_asyncio.fixture
+async def fx_async_session(
+    fx_async_db_engine, fx_base, fx_table_models
+) -> AsyncGenerator[AsyncSession, Any]:
+    async with fx_async_db_engine.begin() as conn:
+        await conn.execute(text('PRAGMA foreign_keys=ON'))
+        await conn.run_sync(fx_base.metadata.create_all)
+    session = AsyncSession(fx_async_db_engine, expire_on_commit=False)
+
+    yield session
+
+    await session.close()
+
+
+@pytest.fixture
+def fx_async_parent_dbal(fx_table_models):
+    parents_model, _, _ = fx_table_models
+
+    class AsyncParentsDBAL(AsyncSqlaDBAL[parents_model]):
+        """DBAL for Parents."""
+
+    return AsyncParentsDBAL
+
+
+@pytest.fixture
+def fx_unified_parent_dbal():
+    """Фабрика для выполнения CRUD-методов."""
+
+    async def _factory(session, table_dbal, method_name: str, *args, **kwargs):
+        dbal = table_dbal(session)
+        method = getattr(dbal, method_name)
+
+        if isinstance(session, Session):
+            return method(*args, **kwargs)
+        elif isinstance(session, AsyncSession):
+            return await method(*args, **kwargs)
+        else:
+            raise TypeError(f'Unsupported session type: {type(session)}')
+
+    return _factory
+
+
+@pytest.fixture(
+    params=[('fx_session', 'fx_parent_dbal'), ('fx_async_session', 'fx_async_parent_dbal')],
+    ids=['sync', 'async'],
+)
+def fx_env(request):
+    """Resolve a matching session/DBAL pair before the async test enters its event loop.
+
+    Async fixtures cannot be requested lazily via ``request.getfixturevalue`` from inside
+    an async test: fixture setup would need a new event loop while the test's loop is
+    already running.
+    """
+
+    session = request.getfixturevalue(request.param[0])
+    dbal_class = request.getfixturevalue(request.param[1])
+
+    return session, dbal_class
