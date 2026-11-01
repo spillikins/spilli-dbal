@@ -23,6 +23,8 @@ Web-framework independent CRUD tools for working with database via SQLAlchemy.
 * [Marshmallow](https://github.com/marshmallow-code/marshmallow) schemas for serialization input data for StatementMaker.
 * [Marshmallow](https://github.com/marshmallow-code/marshmallow) schemas for deserialization StatementMaker result object to `dict`.
 * Datetime with UTC timezone validation in `BaseSchema`.
+* Support for both synchronous and asynchronous (async/await) database operations.
+
 
 ## Installation
 
