@@ -1,15 +1,20 @@
+from collections.abc import AsyncGenerator
 from typing import Any
 from uuid import UUID
 
 import pytest
+import pytest_asyncio
 from spilli_dbal import ModelMixin
+from spilli_dbal.dbal import AsyncSqlaDBAL
 from spilli_dbal.dbal import SqlaDBAL
-from spilli_dbal.statement_maker import StatementMaker
 from sqlalchemy import create_engine
+from sqlalchemy import Engine
 from sqlalchemy import ForeignKey
-from sqlalchemy import Select
+from sqlalchemy import func
+from sqlalchemy import select
 from sqlalchemy import text
-from sqlalchemy.engine import Result
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.ext.asyncio import create_async_engine
 from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm import declarative_base
 from sqlalchemy.orm import Mapped
@@ -17,27 +22,15 @@ from sqlalchemy.orm import mapped_column
 from sqlalchemy.orm import relationship
 from sqlalchemy.orm import Session
 
-from tests.contrib.schemas import ParentPaginationSchema
 
-UNIQUE_STRING = (f'name_{number}' for number in range(1_000))
+@pytest.fixture(scope='session')
+def fx_base():
+    return declarative_base()
 
 
 @pytest.fixture(scope='session')
-def fx_db_connection():
-    engine = create_engine('sqlite://', echo=True, future=True)
-    session = Session(engine)
-    Base = declarative_base()
-
-    session.execute(text('PRAGMA foreign_keys=ON'))
-
-    return Base, engine, session
-
-
-@pytest.fixture(scope='session')
-def fx_db(fx_db_connection):
-    Base, engine, session = fx_db_connection
-
-    class Parents(Base, ModelMixin):
+def fx_table_models(fx_base):
+    class Parents(fx_base, ModelMixin):
         __tablename__ = 'parents'
 
         first: Mapped[str] = mapped_column()
@@ -52,7 +45,15 @@ def fx_db(fx_db_connection):
         def child_count(self) -> int:
             return len(self.children)
 
-    class Children(Base, ModelMixin):
+        @child_count.expression
+        def child_count(cls):
+            return (
+                select(func.count(Children.id))
+                .where(Children.parent_id == cls.id)
+                .scalar_subquery()
+            )
+
+    class Children(fx_base, ModelMixin):
         __tablename__ = 'children'
 
         first: Mapped[str] = mapped_column()
@@ -63,20 +64,58 @@ def fx_db(fx_db_connection):
             'Parents', backref='children', cascade='all, delete-orphan', single_parent=True
         )
 
-    class Fathers(Base, ModelMixin):
+    class Fathers(fx_base, ModelMixin):
         __tablename__ = 'fathers'
 
         first: Mapped[str] = mapped_column()
         second: Mapped[str | None] = mapped_column()
 
-    Base.metadata.create_all(engine)
-
-    return session, Parents, Children, Fathers
+    return Parents, Children, Fathers
 
 
 @pytest.fixture(scope='session')
-def fx_parent_dbal(fx_db):
-    session_db, parents_model, _, _ = fx_db
+def fx_db_engine() -> Engine:
+    engine = create_engine('sqlite://', echo=False, future=True)
+    return engine
+
+
+@pytest.fixture(scope='session')
+def fx_session(fx_db_engine, fx_base, fx_table_models):
+    session = Session(fx_db_engine)
+
+    session.execute(text('PRAGMA foreign_keys=ON'))
+
+    fx_base.metadata.create_all(fx_db_engine)
+
+    yield session
+
+    session.close()
+
+
+@pytest_asyncio.fixture
+async def fx_async_db_engine():
+    engine = create_async_engine('sqlite+aiosqlite:///:memory:', echo=False)
+    yield engine
+    await engine.dispose()
+
+
+@pytest_asyncio.fixture
+async def fx_async_session(
+    fx_async_db_engine, fx_base, fx_table_models
+) -> AsyncGenerator[AsyncSession, Any]:
+    async with fx_async_db_engine.begin() as conn:
+        await conn.execute(text('PRAGMA foreign_keys=ON'))
+        await conn.run_sync(fx_base.metadata.create_all)
+    session = AsyncSession(fx_async_db_engine, expire_on_commit=False)
+
+    yield session
+
+    await session.close()
+
+
+@pytest.fixture(scope='session')
+def fx_parent_dbal(fx_table_models):
+    parents_model, _, _ = fx_table_models
 
     class ParentsDBAL(SqlaDBAL[parents_model]):
         """DBAL for Parents."""
@@ -85,112 +124,44 @@ def fx_parent_dbal(fx_db):
 
 
 @pytest.fixture(scope='session')
-def fx_parent__paginate(fx_db, fx_parent_dbal):
-    session_db, parents_model, _, _ = fx_db
+def fx_async_parent_dbal(fx_table_models):
+    parents_model, _, _ = fx_table_models
 
-    def _f(data: dict[str, Any]):
-        params = {k: v for k, v in data.items() if k not in ['fields']}
+    class AsyncParentsDBAL(AsyncSqlaDBAL[parents_model]):
+        """DBAL for Parents."""
 
-        result = fx_parent_dbal(session_db).paginate(**params)
-
-        only = data.get('fields')
-        serialized_result = ParentPaginationSchema(only=only).dump(result)
-
-        return serialized_result
-
-    return _f
+    return AsyncParentsDBAL
 
 
-@pytest.fixture(scope='session')
-def fx_parent__create(fx_db, fx_parent_dbal):
-    session_db, parents_model, _, _ = fx_db
-
-    def _f(data: dict[str, Any]):
-        return fx_parent_dbal(session_db).create(**data)
+@pytest.fixture
+def fx_parent__create(fx_parent_dbal):
+    def _f(session: Session, data: dict[str, Any]):
+        return fx_parent_dbal(session).create(**data)
 
     return _f
 
 
-@pytest.fixture(scope='session')
-def fx_parent__update(fx_db, fx_parent_dbal):
-    session_db, parents_model, _, _ = fx_db
-
-    def _f(data: dict[str, Any]):
-        return fx_parent_dbal(session_db).update(**data)
-
-    return _f
-
-
-@pytest.fixture(scope='session')
-def fx_child__create(fx_db, fx_parent_dbal):
-    session_db, _, child_model, _ = fx_db
+@pytest.fixture
+def fx_child__create(fx_table_models):
+    _, child_model, _ = fx_table_models
 
     class ChildDBAL(SqlaDBAL[child_model]):
         """DBAL for Children."""
 
-    def _f(data: dict[str, Any]):
-        return ChildDBAL(session_db).create(**data)
+    def _f(session: Session, data: dict[str, Any]):
+        return ChildDBAL(session).create(**data)
 
     return _f
 
 
-@pytest.fixture(scope='session')
-def fx_father__create(fx_db, fx_parent_dbal):
-    session_db, _, _, father_model = fx_db
+@pytest.fixture
+def fx_father__create(fx_table_models):
+    _, _, father_model = fx_table_models
 
     class FathersDBAL(SqlaDBAL[father_model]):
         """DBAL for Fathers."""
 
-    def _f(data: dict[str, Any]):
-        return FathersDBAL(session_db).create(**data)
+    def _f(session: Session, data: dict[str, Any]):
+        return FathersDBAL(session).create(**data)
 
     return _f
-
-
-@pytest.fixture
-def fx_parents__non_deletion(fx_parent__create, fx_child__create, fx_father__create):
-    def _create_item() -> Result:
-        new_father = fx_father__create({'first': next(UNIQUE_STRING)})
-
-        parent_data = {
-            'first': next(UNIQUE_STRING),
-            'second': f'full {next(UNIQUE_STRING)}',
-            'father_id': new_father.id,
-        }
-        new_parent = fx_parent__create(parent_data)
-        fx_child__create({'first': next(UNIQUE_STRING), 'parent_id': new_parent.id})
-        return new_parent
-
-    return _create_item
-
-
-@pytest.fixture
-def fx_make_stmt(fx_db, fx_parents__non_deletion):
-    def _create_item(
-        model,
-        where: dict[str, list[Any]] = None,
-        order_by: list[dict[str, list[Any]]] = None,
-        limit: int | None = None,
-        offset: int | None = None,
-    ) -> Select:
-
-        params = {}
-
-        if limit is not None:
-            params['limit'] = limit
-
-        if offset is not None:
-            params['offset'] = offset
-
-        if where:
-            params['where'] = where
-
-        if order_by:
-            params['order_by'] = order_by
-
-        statement_maker = StatementMaker(model, **params)
-        stmt = statement_maker.make_stmt()
-
-        return stmt
-
-    return _create_item

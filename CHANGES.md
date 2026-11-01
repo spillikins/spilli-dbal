@@ -1,3 +1,7 @@
+## Version 2.0.0
+
+* Add async support.
+
 ## Version 1.1.1
 
 * Remove dead code.

@@ -4,7 +4,7 @@ requires = ["setuptools>=69", "wheel"]
 
 [project]
 authors = [
-  {name = "Konstantin Fadeev", email = "fadeev@legalact.pro"}
+  { name = "Konstantin Fadeev", email = "fadeev@legalact.pro" }
 ]
 classifiers = [
   "Development Status :: 5 - Production/Stable",
@@ -16,24 +16,26 @@ classifiers = [
   "Topic :: Software Development :: Libraries"
 ]
 dependencies = [
-  "SQLAlchemy>=2.0.0",
+  "SQLAlchemy[asyncio]>=2.1.0",
   "marshmallow>=4.0.0"
 ]
 description = "Web-framework independent CRUD tools for working with database via SQLAlchemy."
-license = {file = "LICENSE"}
+license = { file = "LICENSE" }
 name = "Spilli-DBAL"
 readme = "README.md"
 requires-python = ">=3.12"
-version = "1.1.1"
+version = "2.0.0"
 
 [project.optional-dependencies]
 dev = [
+  "aiosqlite==0.22.1",
   "build==1.5.0",
-  "psycopg[binary]==3.3.4",
   "pre-commit==4.6.2",
-  "pytest==9.1.1",
+  "psycopg[binary]==3.3.6",
+  "pytest==9.2.0",
+  "pytest-asyncio==1.4.1",
   "pytest-cov==7.1.0",
-  "python-dotenv==1.2.3",
+  "python-dotenv==1.2.4",
   "tox==4.60.0",
   "twine==7.0.0"
 ]
@@ -70,6 +72,9 @@ check-protected = true
 check-protected-class-methods = true
 disable = ["SIG101", "SIG501"]
 
+[tool.pytest.ini_options]
+asyncio_default_fixture_loop_scope = "function"
+
 [tool.setuptools.packages.find]
 include = ["spilli_dbal*"]
 where = ["src"]
@@ -78,6 +83,7 @@ where = ["src"]
 legacy_tox_ini = """
     [tox]
     env_list =
+        py315
         py314
         py313
         py312
