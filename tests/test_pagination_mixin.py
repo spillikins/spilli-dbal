@@ -1,15 +1,48 @@
 from datetime import timezone
 from math import ceil
+from typing import Any
 from uuid import UUID
 
 import pytest
 from spilli_dbal.dbal.exceptions import DBALPaginateException
+from sqlalchemy.orm import Session
 
-from tests.conftest import UNIQUE_STRING
+from tests.constants import UNIQUE_STRING
+from tests.contrib.schemas import ParentPaginationSchema
+
+
+@pytest.fixture
+def fx_parent__paginate(fx_parent_dbal):
+    def _f(session: Session, data: dict[str, Any]):
+        params = {k: v for k, v in data.items() if k not in ['fields']}
+
+        result = fx_parent_dbal(session).paginate(**params)
+
+        only = data.get('fields')
+
+        return ParentPaginationSchema(only=only).dump(result)
+
+    return _f
+
+
+@pytest.fixture
+def fx_parent__update(fx_parent_dbal):
+    def _f(session: Session, data: dict[str, Any]):
+        return fx_parent_dbal(session).update(**data)
+
+    return _f
+
+
+@pytest.fixture
+def fx_parents__bulk(fx_parent__create):
+    def _f(session: Session, count: int) -> list[Any]:
+        return [fx_parent__create(session, {'first': next(UNIQUE_STRING)}) for _ in range(count)]
+
+    return _f
 
 
 def test_pagination__pagination(fx_session, fx_parents__bulk, fx_parent__paginate):
-    ids = [parent.id for parent in fx_parents__bulk(3)]
+    ids = [parent.id for parent in fx_parents__bulk(fx_session, 3)]
 
     data = {'page': 1, 'per_page': 2, 'ids': ids, 'fields': ['items.id', 'items.first']}
     items = fx_parent__paginate(fx_session, data)
@@ -31,7 +64,7 @@ def test_pagination__pagination(fx_session, fx_parents__bulk, fx_parent__paginat
 
 
 def test_pagination__sorting(fx_session, fx_parents__bulk, fx_parent__paginate):
-    ids = [parent.id for parent in fx_parents__bulk(3)]
+    ids = [parent.id for parent in fx_parents__bulk(fx_session, 3)]
 
     data = {'ids': ids, 'sort__created_at': 'asc'}
     items_asc = fx_parent__paginate(fx_session, data)
@@ -45,7 +78,7 @@ def test_pagination__sorting(fx_session, fx_parents__bulk, fx_parent__paginate):
 
 
 def test_pagination__searching(fx_session, fx_parents__bulk, fx_parent__paginate):
-    new_item, _ = fx_parents__bulk(2)
+    new_item, _ = fx_parents__bulk(fx_session, 2)
     search_substring = new_item.first[3:]
 
     data = {'fields': ['items.id', 'items.first'], 'contain__first': search_substring}
@@ -55,7 +88,7 @@ def test_pagination__searching(fx_session, fx_parents__bulk, fx_parent__paginate
 
 
 def test_pagination__get_fields_of_list(fx_session, fx_parents__bulk, fx_parent__paginate):
-    fx_parents__bulk(1)
+    fx_parents__bulk(fx_session, 1)
 
     data = {'fields': ['items.id', 'items.first']}
     items = fx_parent__paginate(fx_session, data)
@@ -67,7 +100,7 @@ def test_pagination__filtrating(
     fx_session, fx_parent__create, fx_parents__bulk, fx_parent__update, fx_parent__paginate
 ):
     first_item = fx_parent__create(fx_session, {'first': next(UNIQUE_STRING)})
-    fx_parents__bulk(10)
+    fx_parents__bulk(fx_session, 10)
 
     patched_item_payload = {'id': first_item.id, 'first': 'first for test filtrating'}
     patched_first_item = fx_parent__update(fx_session, patched_item_payload)
@@ -81,7 +114,7 @@ def test_pagination__filtrating(
 
 @pytest.mark.parametrize('sort', ['asc', 'desc'])
 def test_pagination__interval_filtration(fx_session, fx_parents__bulk, fx_parent__paginate, sort):
-    item_1, item_2, item_3 = fx_parents__bulk(3)
+    item_1, item_2, item_3 = fx_parents__bulk(fx_session, 3)
 
     data = {
         'ids': [item_1.id, item_2.id, item_3.id],
@@ -108,7 +141,7 @@ def test_pagination__interval_filtration(fx_session, fx_parents__bulk, fx_parent
 def test_pagination__get_non_exist_page(
     fx_session, fx_parents__bulk, fx_parent__paginate, page, per_page
 ):
-    fx_parents__bulk(1)
+    fx_parents__bulk(fx_session, 1)
 
     data = {'page': page, 'per_page': per_page, 'include_metadata': 'enable'}
     with pytest.raises(DBALPaginateException):
@@ -118,7 +151,7 @@ def test_pagination__get_non_exist_page(
 @pytest.mark.parametrize('page', [1, 2])
 @pytest.mark.parametrize('per_page', [1, 2])
 def test_pagination__get_pages(fx_session, fx_parents__bulk, fx_parent__paginate, page, per_page):
-    fx_parents__bulk(4)
+    fx_parents__bulk(fx_session, 4)
 
     data = {'page': page, 'per_page': per_page, 'include_metadata': 'enable'}
     items = fx_parent__paginate(fx_session, data)
@@ -133,7 +166,7 @@ def test_pagination__get_pages(fx_session, fx_parents__bulk, fx_parent__paginate
 
 
 def test_pagination__count_pages_total(fx_session, fx_parents__bulk, fx_parent__paginate):
-    item_1, _ = fx_parents__bulk(2)
+    item_1, _ = fx_parents__bulk(fx_session, 2)
 
     data = {'eq__id': item_1.id, 'include_metadata': 'enable'}
     items = fx_parent__paginate(fx_session, data)
@@ -144,7 +177,7 @@ def test_pagination__count_pages_total(fx_session, fx_parents__bulk, fx_parent__
 
 
 def test_pagination__without_meta_pagination(fx_session, fx_parents__bulk, fx_parent__paginate):
-    fx_parents__bulk(2)
+    fx_parents__bulk(fx_session, 2)
 
     data = {'page': 1, 'per_page': 2}
     items = fx_parent__paginate(fx_session, data)
@@ -202,7 +235,7 @@ def test_pagination__fields_for_relations(
 
 
 def test_pagination__pagination__nullable(fx_session, fx_parents__bulk, fx_parent__paginate):
-    fx_parents__bulk(3)
+    fx_parents__bulk(fx_session, 3)
 
     data = {'page': 0, 'per_page': 0, 'include_metadata': 'enable'}
 
@@ -213,7 +246,7 @@ def test_pagination__pagination__nullable(fx_session, fx_parents__bulk, fx_paren
 
 
 def test_pagination__format_param_error(fx_session, fx_parents__bulk, fx_parent__paginate):
-    item_1, _ = fx_parents__bulk(2)
+    item_1, _ = fx_parents__bulk(fx_session, 2)
 
     data = {'eq_id': item_1.id}
 
