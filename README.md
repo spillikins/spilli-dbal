@@ -8,7 +8,7 @@ Web-framework independent CRUD tools for working with database via SQLAlchemy.
   - [Features](#features)
   - [Installation](#installation)
   - [Examples](#examples)
-    - [Full example](#full-example)
+    - [Async example](#async-example)
   - [Project automation](#project-automation)
 
 <!--TOC-->
@@ -36,20 +36,21 @@ $ pip install -U spilli_dbal
 
 ## Examples
 
-### Full example
+### Async example
 
 ```python
-from spilli_dbal.models.base import ModelMixin
-from spilli_dbal.dbal import SqlaDBAL
+import asyncio
+
+from spilli_dbal.dbal import AsyncSqlaDBAL
 from spilli_dbal.dbal.exceptions import DBALObjectNotFoundException
-from sqlalchemy import create_engine
+from spilli_dbal.models.base import ModelMixin
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.ext.asyncio import create_async_engine
 from sqlalchemy.orm import declarative_base
 from sqlalchemy.orm import Mapped
 from sqlalchemy.orm import mapped_column
-from sqlalchemy.orm import Session
 
-engine = create_engine('sqlite://', echo=True, future=True)
-session = Session(engine)
+engine = create_async_engine('sqlite+aiosqlite://', echo=False)
 Base = declarative_base()
 
 
@@ -58,29 +59,38 @@ class Items(ModelMixin, Base):
     data: Mapped[str] = mapped_column(comment='Data of item.')
 
 
-Base.metadata.create_all(engine)
-
-
-class ItemsDBAL(SqlaDBAL[Items]):
+class ItemsDBAL(AsyncSqlaDBAL[Items]):
     """Items DBAL."""
 
 
+async def main() -> None:
+    async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.create_all)
+
+    async with AsyncSession(engine, expire_on_commit=False) as session:
+        new_item = await ItemsDBAL(session).create(data='data')
+        print('=>', 'New item:', new_item)
+
+        item = await ItemsDBAL(session).read(id=new_item.id)
+        print('=>', 'Item:', item)
+
+        updated_item = await ItemsDBAL(session).update(id=new_item.id, data='updated_data')
+        print('=>', 'Updated item:', updated_item)
+
+        await ItemsDBAL(session).delete(id=new_item.id)
+        try:
+            await ItemsDBAL(session).read(id=new_item.id)
+        except DBALObjectNotFoundException:
+            print('=>', 'Deleted item.')
+
+    await engine.dispose()
+
+
 if __name__ == '__main__':
-    new_item = ItemsDBAL(session).create(data='data')
-    print('=>', 'New item:', new_item)
-
-    item = ItemsDBAL(session).read(id=new_item.id)
-    print('=>', 'Item:', item)
-
-    updated_item = ItemsDBAL(session).update(id=new_item.id, data='updated_data')
-    print('=>', 'Updated item:', updated_item)
-
-    ItemsDBAL(session).delete(id=new_item.id)
-    try:
-        ItemsDBAL(session).read(id=new_item.id)
-    except DBALObjectNotFoundException:
-        print('=>', 'Deleted item.')
+    asyncio.run(main())
 ```
+
+Other examples in `example/` folder.
 
 ## Project automation
 

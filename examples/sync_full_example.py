@@ -7,7 +7,7 @@ from sqlalchemy.orm import Mapped
 from sqlalchemy.orm import mapped_column
 from sqlalchemy.orm import Session
 
-engine = create_engine('sqlite://', echo=True, future=True)
+engine = create_engine('sqlite://', echo=False)
 session = Session(engine)
 Base = declarative_base()
 
