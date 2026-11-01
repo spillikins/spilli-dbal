@@ -10,6 +10,8 @@ from spilli_dbal.dbal import SqlaDBAL
 from sqlalchemy import create_engine
 from sqlalchemy import Engine
 from sqlalchemy import ForeignKey
+from sqlalchemy import func
+from sqlalchemy import select
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.ext.asyncio import create_async_engine
@@ -42,6 +44,14 @@ def fx_table_models(fx_base):
         @hybrid_property
         def child_count(self) -> int:
             return len(self.children)
+
+        @child_count.expression
+        def child_count(cls):
+            return (
+                select(func.count(Children.id))
+                .where(Children.parent_id == cls.id)
+                .scalar_subquery()
+            )
 
     class Children(fx_base, ModelMixin):
         __tablename__ = 'children'

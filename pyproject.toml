@@ -16,7 +16,7 @@ classifiers = [
   "Topic :: Software Development :: Libraries"
 ]
 dependencies = [
-  "SQLAlchemy>=2.0.0",
+  "SQLAlchemy[asyncio]>=2.1.0",
   "marshmallow>=4.0.0"
 ]
 description = "Web-framework independent CRUD tools for working with database via SQLAlchemy."
@@ -83,6 +83,7 @@ where = ["src"]
 legacy_tox_ini = """
     [tox]
     env_list =
+        py315
         py314
         py313
         py312
