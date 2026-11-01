@@ -12,6 +12,7 @@ jobs:
           3.12
           3.13
           3.14
+          3.15
     - run: make format
   test:
     runs-on: ubuntu-latest
@@ -23,6 +24,7 @@ jobs:
           3.12
           3.13
           3.14
+          3.15
     - run: make test
   tox:
     runs-on: ubuntu-latest
@@ -34,6 +36,7 @@ jobs:
           3.12
           3.13
           3.14
+          3.15
     - run: make tox
   build:
     runs-on: ubuntu-latest
@@ -45,4 +48,5 @@ jobs:
           3.12
           3.13
           3.14
+          3.15
     - run: make build
